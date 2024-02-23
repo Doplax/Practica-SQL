@@ -1,80 +1,114 @@
--- Grupo empresarial
-CREATE TABLE empresa.grupo_empresarial(
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(80) NOT NULL
+CREATE SCHEMA IF NOT EXISTS flota;
+
+-- TABALS SIN FK
+
+CREATE TABLE IF NOT EXISTS flota.color (
+	id SERIAL PRIMARY KEY,
+	nombre VARCHAR(70) NOT NULL
 );
 
--- Marca del vehículo
-CREATE TABLE empresa.marca_vehiculo(
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(30) NOT NULL,
-    id_grupo_empresarial INT REFERENCES empresa.grupo_empresarial(id)
+CREATE TABLE IF NOT EXISTS flota.aseguradora (
+	id SERIAL PRIMARY KEY,
+	nombre VARCHAR(50) NOT NULL
 );
 
--- Modelo del vehículo
-CREATE TABLE empresa.modelo_vehiculo(
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(50) NOT NULL,
-    id_marca INT REFERENCES empresa.marca_vehiculo(id)
+CREATE TABLE IF NOT EXISTS flota.moneda (
+	id SERIAL PRIMARY KEY,
+	nombre VARCHAR(30) NOT NULL
 );
 
--- Color del vehículo
-CREATE TABLE empresa.color_vehiculo(
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(30) NOT NULL
-);
-
--- Vehículo
-CREATE TABLE empresa.vehiculo(
-    matricula VARCHAR(10) PRIMARY KEY,
-    km_total DECIMAL(10,2) NOT NULL,
-    fecha_compra DATE NOT NULL,
-    id_modelo INT REFERENCES empresa.modelo_vehiculo(id),
-    id_color INT REFERENCES empresa.color_vehiculo(id)
-);
-
--- Revisión del vehículo
-CREATE TABLE empresa.revision(
-    id SERIAL PRIMARY KEY,
-    km_revision DECIMAL(10,2) NOT NULL,
-    fecha_revision DATE NOT NULL,
-    importe DECIMAL(10,2) NOT NULL,
-    id_moneda INT REFERENCES empresa.moneda(id),
-    matricula_vehiculo VARCHAR(10) REFERENCES empresa.vehiculo(matricula)
+CREATE TABLE IF NOT EXISTS flota.grupo_empresarial (
+	id SERIAL PRIMARY KEY,
+	nombre VARCHAR(50) NOT NULL
 );
 
 
--- Moneda
-CREATE TABLE empresa.moneda(
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(30) NOT NULL
+-- TABLAS CON FK
+
+CREATE TABLE IF NOT EXISTS flota.marca(
+	id SERIAL PRIMARY KEY,
+	nombre VARCHAR(70) NOT NULL,
+	id_grupo_empresarial INT NOT NULL,
+	CONSTRAINT fk_marca_empresarial FOREIGN KEY (id_grupo_empresarial) REFERENCES flota.grupo_empresarial (id)
 );
 
--- Aseguradora
-CREATE TABLE empresa.aseguradora(
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(50) NOT NULL
+
+CREATE TABLE IF NOT EXISTS flota.modelo(
+	id SERIAL PRIMARY KEY,
+	nombre VARCHAR(50) not null,
+	id_marca INT NOT null,
+	CONSTRAINT fk_modelo_marca FOREIGN KEY (id_marca) REFERENCES flota.marca (id)
 );
 
--- Póliza de seguro
-CREATE TABLE empresa.poliza_seguro(
+
+CREATE TABLE IF NOT EXISTS flota.coche (
+	matricula VARCHAR(10) PRIMARY KEY,
+	fecha_compra DATE NOT NULL,
+	kms_totales INT NOT NULL,
+	id_modelo INT NOT NULL,
+	id_color INT NOT null,
+	CONSTRAINT fk_coche_modelo FOREIGN KEY (id_modelo) REFERENCES flota.modelo (id),
+	CONSTRAINT fk_coche_color  FOREIGN KEY (id_color) REFERENCES flota.color (id)
+);
+
+
+CREATE TABLE IF NOT EXISTS flota.poliza (
     num_poliza INT PRIMARY KEY,
-    fecha_poliza DATE NOT NULL,
-    matricula_vehiculo VARCHAR(10) REFERENCES empresa.vehiculo(matricula),
-    id_aseguradora INT REFERENCES empresa.aseguradora(id)
+    fecha_alta DATE NOT NULL,
+    id_aseguradora INT NOT NULL,
+    matricula VARCHAR(10),
+    CONSTRAINT fk_poliza_aseguradora FOREIGN KEY (id_aseguradora) REFERENCES flota.aseguradora (id),
+    CONSTRAINT fk_poliza_coche FOREIGN KEY (matricula) REFERENCES flota.coche (matricula)
 );
 
 
--- Restricciones y relaciones
-ALTER TABLE empresa.vehiculo ADD CONSTRAINT fk_modelo FOREIGN KEY (id_modelo) REFERENCES empresa.modelo_vehiculo(id);
-ALTER TABLE empresa.vehiculo ADD CONSTRAINT fk_color FOREIGN KEY (id_color) REFERENCES empresa.color_vehiculo(id);
-ALTER TABLE empresa.revision ADD CONSTRAINT fk_moneda FOREIGN KEY (id_moneda) REFERENCES empresa.moneda(id);
-ALTER TABLE empresa.revision ADD CONSTRAINT fk_vehiculo FOREIGN KEY (matricula_vehiculo) REFERENCES empresa.vehiculo(matricula);
-ALTER TABLE empresa.poliza_seguro ADD CONSTRAINT fk_aseguradora FOREIGN KEY (id_aseguradora) REFERENCES empresa.aseguradora(id);
-ALTER TABLE empresa.poliza_seguro ADD CONSTRAINT fk_vehiculo FOREIGN KEY (matricula_vehiculo) REFERENCES empresa.vehiculo(matricula);
+CREATE TABLE IF NOT EXISTS flota.revision (
+	id SERIAL PRIMARY KEY,
+	matricula VARCHAR(10),
+	importe FLOAT NOT NULL,
+	id_moneda INT NOT NULL,
+	kms INT NOT NULL,
+	fecha_revision DATE NOT NULL,
+	CONSTRAINT fk_revision_moneda FOREIGN KEY (id_moneda) REFERENCES flota.moneda (id),
+	CONSTRAINT fk_revision_coche FOREIGN KEY (matricula) REFERENCES flota.coche (matricula)
+);
 
 
-INSERT INTO flota_keepcoding.coches (matricula,grupo,marca,modelo,fecha_compra,color,aseguradora,n_poliza,fecha_alta_seguro,importe_revision,moneda,kms_revision,fecha_revision,kms_totales) VALUES
+
+
+
+
+CREATE TABLE IF NOT EXISTS flota.coche (
+	matricula VARCHAR(10) PRIMARY KEY,
+	fecha_compra DATE NOT NULL,
+	kms_totales INT NOT NULL,
+	id_modelo INT NOT NULL,
+	id_color INT NOT null,
+	CONSTRAINT fk_coche_modelo FOREIGN KEY (id_modelo) REFERENCES flota.modelo (id),
+	CONSTRAINT fk_coche_color  FOREIGN KEY (id_color) REFERENCES flota.color (id)
+);
+
+
+CREATE TABLE IF NOT EXISTS flota.datos_vehiculos (	
+	matricula VARCHAR(10) null,
+	grupo VARCHAR(100) null,
+	marca VARCHAR(70) null,
+	modelo VARCHAR(70) null,
+	fecha_compra DATE null,
+	color VARCHAR(70) null,
+	aseguradora VARCHAR(70) null,
+	n_poliza int4 null,
+	fecha_alta_seguro DATE null,
+	importe_revision float4 null,
+	moneda VARCHAR(70) null,
+	kms_revision int4 null,
+	fecha_revision DATE null,
+	kms_totales int4 null
+);
+
+
+
+INSERT INTO flota.datos_vehiculos (matricula,grupo,marca,modelo,fecha_compra,color,aseguradora,n_poliza,fecha_alta_seguro,importe_revision,moneda,kms_revision,fecha_revision,kms_totales) VALUES
 	 ('7343FRT','Renault-Nissan-Mitsubishi Alliance','Renault','Clio','2009-06-01','Rojo','Allianz',25786,'2009-06-01',1076032.5,'Peso Colombiano',29564,'2020-07-07',47644),
 	 ('2438GSV','PSA Peugeot S.A.','Citroën','DS4','2010-04-17','Gris Plateado','Allianz',195443,'2010-04-17',734.7,'Dólar',12028,'2010-05-13',52349),
 	 ('2438GSV','PSA Peugeot S.A.','Citroën','DS4','2010-04-17','Gris Plateado','Axa',110761,'2011-08-23',460.0,'Euro',28312,'2016-05-17',52349),
@@ -175,7 +209,7 @@ INSERT INTO flota_keepcoding.coches (matricula,grupo,marca,modelo,fecha_compra,c
 	 ('1323DQL','Renault-Nissan-Mitsubishi Alliance','Renault','Kangoo','2006-01-22','Negro','Mapfre',172309,'2006-01-22',3701551.8,'Peso Colombiano',62371,'2007-01-03',107492),
 	 ('1323DQL','Renault-Nissan-Mitsubishi Alliance','Renault','Kangoo','2006-01-22','Negro','Generali',176268,'2007-01-07',3572428.0,'Peso Colombiano',90278,'2007-11-23',107492),
 	 ('2684FZV','PSA Peugeot S.A.','Citroën','DS4','2008-05-10','Negro','Mapfre',50387,'2008-05-10',455.7,'Dólar',17713,'2008-06-07',36859);
-INSERT INTO flota_keepcoding.coches (matricula,grupo,marca,modelo,fecha_compra,color,aseguradora,n_poliza,fecha_alta_seguro,importe_revision,moneda,kms_revision,fecha_revision,kms_totales) VALUES
+INSERT INTO flota.datos_vehiculos (matricula,grupo,marca,modelo,fecha_compra,color,aseguradora,n_poliza,fecha_alta_seguro,importe_revision,moneda,kms_revision,fecha_revision,kms_totales) VALUES
 	 ('6010JXB','Hyundai Motor Group','Kia','Ceed','2017-06-30','Negro','Mapfre',117329,'2018-06-05',8854.8,'Peso Mexicano',19345,'2018-07-09',46520),
 	 ('9281BNK','Hyundai Motor Group','Hyundai','Tucson','2002-04-06','Gris Plateado','Mapfre',88106,'2002-04-06',9043.2,'Peso Mexicano',15082,'2003-10-06',35517),
 	 ('0393DWY','PSA Peugeot S.A.','Peugeot','5008','2007-08-02','Rojo','Allianz',73097,'2007-08-02',50.0,'Euro',22765,'2020-02-03',41340),
@@ -234,3 +268,95 @@ INSERT INTO flota_keepcoding.coches (matricula,grupo,marca,modelo,fecha_compra,c
 	 ('6532KNR','Hyundai Motor Group','Hyundai','i30','2019-03-24','Azul','Generali',45918,'2019-03-24',13753.2,'Peso Mexicano',19344,'2022-03-26',35831),
 	 ('4389KSN','PSA Peugeot S.A.','Peugeot','206','2019-02-14','Rojo','Axa',112290,'2020-09-21',559536.9,'Peso Colombiano',19885,'2021-12-06',30862),
 	 ('5572DHP','Hyundai Motor Group','Kia','Rio','2007-06-06','Blanco','Axa',75790,'2007-06-06',186.0,'Dólar',22437,'2014-05-29',42143);
+
+
+
+
+INSERT INTO flota.color (nombre)
+	SELECT color
+	FROM flota.datos_vehiculos
+	GROUP BY color;
+
+
+insert into flota.grupo_empresarial (nombre)
+	select grupo 
+	from flota.datos_vehiculos 
+	group by grupo;
+
+
+
+INSERT INTO flota.marca (nombre, id_grupo_empresarial)
+	SELECT dv.marca, ge.id
+	FROM flota.datos_vehiculos dv
+	INNER JOIN flota.grupo_empresarial ge ON dv.grupo = ge.nombre
+	GROUP BY dv.marca, ge.id;
+
+
+insert into flota.modelo (nombre, id_marca)
+	select dv.modelo, m.id
+	from flota.datos_vehiculos dv
+	inner join flota.marca m on dv.marca = m.nombre
+	group by dv.modelo, m.id;
+
+
+INSERT INTO flota.aseguradora (nombre)
+	SELECT aseguradora
+	FROM flota.datos_vehiculos
+	GROUP BY aseguradora;
+
+
+INSERT INTO flota.coche (matricula, fecha_compra, kms_totales, id_modelo, id_color)
+	SELECT dv.matricula, CAST(dv.fecha_compra AS DATE), dv.kms_totales, mo.id, co.id
+	FROM flota.datos_vehiculos dv
+	INNER JOIN flota.modelo mo ON dv.modelo = mo.nombre
+	INNER JOIN flota.color co ON dv.color = co.nombre
+	GROUP BY dv.matricula, dv.fecha_compra, dv.kms_totales, mo.id, co.id;
+
+
+
+INSERT INTO flota.poliza (num_poliza, fecha_alta, id_aseguradora, matricula)
+SELECT dv.n_poliza, dv.fecha_alta_seguro, a.id, dv.matricula
+FROM flota.datos_vehiculos dv
+INNER JOIN flota.aseguradora a ON dv.aseguradora = a.nombre
+GROUP BY dv.n_poliza, dv.fecha_alta_seguro, a.id, dv.matricula;
+
+
+
+
+INSERT INTO flota.moneda (nombre)
+	SELECT moneda
+	FROM flota.datos_vehiculos
+	GROUP BY moneda;
+
+
+INSERT INTO flota.revision (matricula, importe, id_moneda, kms, fecha_revision)
+SELECT dv.matricula, dv.importe_revision, m.id, dv.kms_revision, CAST(dv.fecha_revision AS DATE)
+FROM flota.datos_vehiculos dv
+INNER JOIN flota.moneda m ON dv.moneda = m.nombre
+GROUP BY dv.matricula, dv.importe_revision, m.id, dv.kms_revision, dv.fecha_revision;
+
+
+DROP TABLE flota.datos_vehiculos;
+
+
+
+-- Consulta
+SELECT 
+    mo.nombre AS "Nombre Modelo",
+    ma.nombre AS "Marca",
+    ge.nombre AS "Grupo Empresarial",
+    co.fecha_compra AS "Fecha de Compra",
+    co.matricula AS "Matricula",
+    col.nombre AS "Color del Coche",
+    co.kms_totales AS "Total de Kilómetros",
+    asg.nombre AS "Nombre Empresa Aseguradora",
+    po.num_poliza AS "Número de Póliza"
+FROM 
+    flota.coche co
+INNER JOIN flota.modelo mo ON co.id_modelo = mo.id
+INNER JOIN flota.marca ma ON mo.id_marca = ma.id
+INNER JOIN flota.grupo_empresarial ge ON ma.id_grupo_empresarial = ge.id
+INNER JOIN flota.color col ON co.id_color = col.id
+LEFT JOIN flota.poliza po ON co.matricula = po.matricula
+LEFT JOIN flota.aseguradora asg ON po.id_aseguradora = asg.id
+ORDER BY co.fecha_compra DESC;
